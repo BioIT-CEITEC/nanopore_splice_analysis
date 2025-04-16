@@ -1,0 +1,11 @@
+name: talon_env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8
+  - bioconda::talon
+  - samtools
+  - bedtools
+  - minimap2

@@ -1,0 +1,33 @@
+{
+  "workflow_description": {
+    "name":"nanopore_splice_analysis",
+    "version": 1.0,
+    "label":"Splice_analysis",
+    "type":"splice_analysis",
+    "inputs":[
+      "aligned/{sample}/{sample}_sorted.bam",
+      "aligned/{sample}/{sample}_sorted.bam.bai"
+    ],
+    "outputs":[
+
+    ],
+    "run_parameters": {
+      "cpu": 30,
+      "memory": 128
+    }
+  },
+  "general_params": [
+  "entity_name",
+  "sample_name"
+  ],
+  "requested_params": [
+    "organism", 
+    "assembly",
+    "5mC_methylation", 
+    "6mA_methylation"
+  ],
+  "gui_params" : {
+
+  }
+}
+
