@@ -9,7 +9,9 @@
       "aligned/{sample}/{sample}_sorted.bam.bai"
     ],
     "outputs":[
-
+      "splice_analysis/{sample}/{sample}_filtered_read_annot.tsv",
+      "splice_analysis/{sample}/{sample}_transcripts.gtf",
+      "splice_analysis/{sample}/{sample}_abundance.tsv" 
     ],
     "run_parameters": {
       "cpu": 30,
@@ -27,7 +29,6 @@
     "6mA_methylation"
   ],
   "gui_params" : {
-
   }
 }
 
