@@ -35,9 +35,10 @@ rule label_reads:
     params:
         genome = config["organism_fasta"]
     conda: "envs/talon.yaml"
+    threads: workflow.cores * 0.75
     shell:
         """
-        talon_label_reads --f={input} --g={params.genome} --deleteTmp  --o="labeled_"
+        talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o="labeled_"
         """    
 
 rule initialize_talon_database:
@@ -45,6 +46,7 @@ rule initialize_talon_database:
         ref_gtf = config["organism_gtf"]
     output: "splice_analysis/{sample_name}/talon.db"
     conda: "envs/talon.yaml"
+    threads: workflow.cores * 0.75
     params:
         annotation="r110", 
         genome="hg38"
@@ -70,14 +72,14 @@ rule talon_annotate:
     threads: workflow.cores * 0.75
     conda: "envs/talon.yaml"
     shell:
-    """
+        """
         talon \
             --f {input.sam} \
             --db {input.db} \
             --threads {threads}  \
             --build {params.genome} \
             --o {params.sample_name} \
-    """
+        """
 
 rule talon_filter_transcripts:
     input:
