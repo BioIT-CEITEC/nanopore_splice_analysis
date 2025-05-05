@@ -11,18 +11,7 @@ module BR:
 
 use rule * from BR as other_*
 config = BR.load_organism()
-sample_tab = BR.load_sample()¨
-
-# create config for talon
-touch splice_analysis/config.csv
-for file in labeled/${sample_name}_labeled.sam; # probably will be the one with labeled
-do
-    echo $file
-    base=`basename $file .sam`
-    base="${base::${#base}-8}"
-    sample="${base::${#base}-6}"
-    printf "${base},${sample},ONT,${file}\n" >> splice_analysis/config.csv
-done
+sample_tab = BR.load_sample()
 
 
 rule all:
