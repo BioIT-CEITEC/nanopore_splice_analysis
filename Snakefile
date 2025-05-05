@@ -11,11 +11,23 @@ module BR:
 
 use rule * from BR as other_*
 config = BR.load_organism()
-sample_tab = BR.load_sample()
+sample_tab = BR.load_sample()¨
+
+# create config for talon
+touch splice_analysis/config.csv
+for file in labeled/${sample_name}_labeled.sam; # probably will be the one with labeled
+do
+    echo $file
+    base=`basename $file .sam`
+    base="${base::${#base}-8}"
+    sample="${base::${#base}-6}"
+    printf "${base},${sample},ONT,${file}\n" >> splice_analysis/config.csv
+done
+
 
 rule all:
     input:
-        expand("splice_analysis/{sample_name}/{sample_name}_filtered_read_annot.tsv", sample_name = sample_tab.sample_name),
+        expand("splice_analysis/{sample_name}/{sample_name}_read_annot.tsv", sample_name = sample_tab.sample_name),
         expand("splice_analysis/{sample_name}/{sample_name}_transcripts.gtf", sample_name = sample_tab.sample_name),
         expand("splice_analysis/{sample_name}/{sample_name}_abundance.tsv", sample_name = sample_tab.sample_name)
 
@@ -46,26 +58,43 @@ rule initialize_talon_database:
         ref_gtf = config["organism_gtf"]
     output: "splice_analysis/{sample_name}/talon.db"
     conda: "envs/talon.yaml"
-    threads: workflow.cores * 0.75
     params:
         annotation="r110", 
-        genome="hg38"
+        genome="hg38",
+        output_prefix="splice_analysis/{sample_name}/talon"
     shell:
         """
         talon_initialize_database \
             --f {input.ref_gtf} \
             --g {params.genome} \
             --a  {params.annotation} \
-            --l ont \
-            --o {output}
+            --o {params.output_prefix} 
+        """
+
+rule create_talon_config:
+    input:
+        sam_files="labeled/{sample_name}_labeled.sam"
+    output:
+        "splice_analysis/config.csv"
+    shell:
+        """
+        touch {output}
+        for file in  {input.sam_files}; 
+        do
+            echo $file
+            base=`basename $file .sam`
+            base="${base::${#base}-8}"
+            sample="${base::${#base}-6}"
+            printf "${base},${sample},ONT,${file}\n" >> {output}
+        done
         """
 
 rule talon_annotate:
     input: 
-        sam='aligned/{sample_name}/labeled_{sample_name}_sorted.sam',
+        config="splice_analysis/config.csv",
         db="splice_analysis/{sample_name}/talon.db"
     output: 
-        tsv="splice_analysis/{sample_name}/{sample_name}read_annot.tsv"
+        tsv="splice_analysis/{sample_name}/{sample_name}_read_annot.tsv"
     params:
         sample_name=lambda wildcards: wildcards.sample_name,
         genome="hg38"
@@ -74,7 +103,7 @@ rule talon_annotate:
     shell:
         """
         talon \
-            --f {input.sam} \
+            --f {input.config} \
             --db {input.db} \
             --threads {threads}  \
             --build {params.genome} \
