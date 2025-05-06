@@ -34,6 +34,7 @@
         "label": "Which annotation to use",
         "type": "string",
         "default": "r111"
+      }
     }
   }
 }
