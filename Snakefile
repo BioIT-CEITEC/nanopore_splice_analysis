@@ -30,20 +30,19 @@ rule convert_bam_to_sam:
         """
         samtools view -h -o {output} {input}
         """
-
 rule label_reads:
     input:expand('aligned/{sample_name}/{sample_name}_sorted.sam', sample_name = sample_tab.sample_name)
-    output: 'labeled/{sample_name}_labeled.sam'
+    output: 'labeled/{sample_name}/{sample_name}_labeled.sam'
     params:
         genome = config["organism_fasta"],
-        output_dir = "labeled/{sample_name}/"
+        output_dir = "labeled/{sample_name}/{sample_name}"
     conda: "envs/talon.yaml"
     threads: workflow.cores * 0.75
     shell:
         """
         mkdir -p {params.output_dir}
         talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o={params.output_dir}
-        """    
+        """     
 
 rule initialize_talon_database:
     input:
