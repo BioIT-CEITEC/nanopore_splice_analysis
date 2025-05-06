@@ -29,6 +29,12 @@
     "6mA_methylation"
   ],
   "gui_params" : {
+    "detailed" : {
+      "annotation": {
+        "label": "Which annotation to use",
+        "type": "string",
+        "default": "r111"
+    }
   }
 }
 

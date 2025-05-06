@@ -12,17 +12,18 @@ module BR:
 use rule * from BR as other_*
 config = BR.load_organism()
 sample_tab = BR.load_sample()
-
+ANNOTATION = config["annotation"]
 
 rule all:
     input:
-        expand("splice_analysis/{sample_name}/{sample_name}_read_annot.tsv", sample_name = sample_tab.sample_name),
-        expand("splice_analysis/{sample_name}/{sample_name}_transcripts.gtf", sample_name = sample_tab.sample_name),
-        expand("splice_analysis/{sample_name}/{sample_name}_abundance.tsv", sample_name = sample_tab.sample_name)
+        expand("splice_analysis/{sample_name}/{sample_name}_talon_read_annot.tsv", sample_name = sample_tab.sample_name),
+        expand("splice_analysis/{sample_name}/{sample_name}_filtered_read_annot.tsv", sample_name = sample_tab.sample_name),
+        expand("splice_analysis/{sample_name}/{sample_name}_talon.gtf", sample_name = sample_tab.sample_name),
+        expand("splice_analysis/{sample_name}/{sample_name}_talon_abundance.tsv", sample_name = sample_tab.sample_name)
 
 
 rule convert_bam_to_sam: 
-    input:'aligned/{sample_name}/{sample_name}_sorted.bam'
+    input:expand('aligned/{sample_name}/{sample_name}_sorted.bam', sample_name = sample_tab.sample_name)
     output: 'aligned/{sample_name}/{sample_name}_sorted.sam'
     conda: "envs/talon.yaml"
     shell:
@@ -31,15 +32,17 @@ rule convert_bam_to_sam:
         """
 
 rule label_reads:
-    input:'aligned/{sample_name}/{sample_name}_sorted.sam'
-    output: 'aligned/{sample_name}/labeled_{sample_name}_sorted.sam'
+    input:expand('aligned/{sample_name}/{sample_name}_sorted.sam', sample_name = sample_tab.sample_name)
+    output: 'labeled/{sample_name}_labeled.sam'
     params:
-        genome = config["organism_fasta"]
+        genome = config["organism_fasta"],
+        output_dir = "labeled/{sample_name}/"
     conda: "envs/talon.yaml"
     threads: workflow.cores * 0.75
     shell:
         """
-        talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o="labeled_"
+        mkdir -p {params.output_dir}
+        talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o={params.output_dir}
         """    
 
 rule initialize_talon_database:
@@ -48,7 +51,7 @@ rule initialize_talon_database:
     output: "splice_analysis/{sample_name}/talon.db"
     conda: "envs/talon.yaml"
     params:
-        annotation="r110", 
+        annotation=ANNOTATION, 
         genome="hg38",
         output_prefix="splice_analysis/{sample_name}/talon"
     shell:
@@ -62,31 +65,30 @@ rule initialize_talon_database:
 
 rule create_talon_config:
     input:
-        sam_files="labeled/{sample_name}_labeled.sam"
+        sam_files=expand("labeled/{sample_name}_labeled.sam", sample_name = sample_tab.sample_name)
     output:
         "splice_analysis/config.csv"
-    shell:
-        """
-        touch {output}
-        for file in  {input.sam_files}; 
-        do
-            echo $file
-            base=`basename $file .sam`
-            base="${base::${#base}-8}"
-            sample="${base::${#base}-6}"
-            printf "${base},${sample},ONT,${file}\n" >> {output}
-        done
-        """
+    run:
+        import os
+
+        os.makedirs(os.path.dirname(output[0]), exist_ok=True)
+        with open(output[0], "w") as f:
+            for file in input.sam_files:
+                base = os.path.basename(file).removesuffix(".sam")
+                base = base[:-8]  # remove "_labeled"
+                sample = base[:-6]
+
+                f.write(f"{base},{sample},ONT,{file}\n")
 
 rule talon_annotate:
     input: 
         config="splice_analysis/config.csv",
         db="splice_analysis/{sample_name}/talon.db"
     output: 
-        tsv="splice_analysis/{sample_name}/{sample_name}_read_annot.tsv"
+        tsv="splice_analysis/{sample_name}/{sample_name}_talon_read_annot.tsv"
     params:
-        sample_name=lambda wildcards: wildcards.sample_name,
-        genome="hg38"
+        genome="hg38",
+        output_prefix="splice_analysis/{sample_name}/{sample_name}"
     threads: workflow.cores * 0.75
     conda: "envs/talon.yaml"
     shell:
@@ -96,7 +98,7 @@ rule talon_annotate:
             --db {input.db} \
             --threads {threads}  \
             --build {params.genome} \
-            --o {params.sample_name} \
+            --o {params.output_prefix} \
         """
 
 rule talon_filter_transcripts:
@@ -105,13 +107,13 @@ rule talon_filter_transcripts:
     output:
         filtered="splice_analysis/{sample_name}/{sample_name}_filtered_read_annot.tsv"
     params:
-        annotation="r110"
+        annotation=ANNOTATION
     conda: "envs/talon.yaml"
     shell:
         """
         talon_filter_transcripts \
             --db {input.db} \
-            --a {params.annotation} \
+            -a {params.annotation} \
             --o {output.filtered} 
         """
 
@@ -119,32 +121,32 @@ rule talon_create_gtf:
     input:
         db="splice_analysis/{sample_name}/talon.db"
     output:
-        "splice_analysis/{sample_name}/{sample_name}_transcripts.gtf"
+        "splice_analysis/{sample_name}/{sample_name}_talon.gtf"
     params:
-        annotation="r110"
+        annotation=ANNOTATION, 
+        genome="hg38",
+        output_prefix="splice_analysis/{sample_name}/{sample_name}"
     conda: "envs/talon.yaml"
     shell:
         """
-        talon_create_GTF \
-            --db {input.db} \
-            --a {params.annotation} \
-            --o {output}
+        talon_create_GTF --db {input.db} -a {params.annotation} -b {params.genome} --o {params.output_prefix}
         """
 
 rule talon_abundance:
     input:
         db="splice_analysis/{sample_name}/talon.db"
     output:
-        "splice_analysis/{sample_name}/{sample_name}_abundance.tsv"
+        "splice_analysis/{sample_name}/{sample_name}_talon_abundance.tsv"
     params:
-        annotation="r110",
-        genome="hg38"
+        annotation=ANNOTATION, 
+        genome="hg38",
+        output_prefix="splice_analysis/{sample_name}/{sample_name}"
     conda: "envs/talon.yaml"
     shell:
         """
         talon_abundance \
             --db {input.db} \
-            --a {params.annotation} \
-            --b {params.genome} \
-            --o splice_analysis/{wildcards.sample_name}/{wildcards.sample_name}_abundance
+            -a {params.annotation} \
+            -b {params.genome} \
+            --o {params.output_prefix} \
         """
