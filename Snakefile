@@ -30,6 +30,7 @@ rule convert_bam_to_sam:
         """
         samtools view -h -o {output} {input}
         """
+
 rule label_reads:
     input:expand('aligned/{sample_name}/{sample_name}_sorted.sam', sample_name = sample_tab.sample_name)
     output: 'labeled/{sample_name}/{sample_name}_labeled.sam'
@@ -42,7 +43,7 @@ rule label_reads:
         """
         mkdir -p {params.output_dir}
         talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o={params.output_dir}
-        """     
+        """    
 
 rule initialize_talon_database:
     input:
@@ -64,7 +65,7 @@ rule initialize_talon_database:
 
 rule create_talon_config:
     input:
-        sam_files=expand("labeled/{sample_name}_labeled.sam", sample_name = sample_tab.sample_name)
+        sam_files=expand("labeled/{sample_name}/{sample_name}_labeled.sam", sample_name = sample_tab.sample_name)
     output:
         "splice_analysis/config.csv"
     run:
