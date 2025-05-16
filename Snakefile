@@ -22,21 +22,21 @@ rule all:
         expand("splice_analysis/{sample_name}/{sample_name}_talon_abundance.tsv", sample_name = sample_tab.sample_name)
 
 
-rule convert_bam_to_sam: 
-    input:expand('aligned/{sample_name}/{sample_name}_sorted.bam', sample_name = sample_tab.sample_name)
-    output: 'aligned/{sample_name}/{sample_name}_sorted.sam'
-    conda: "envs/talon.yaml"
-    shell:
-        """
-        samtools view -h -o {output} {input}
-        """
+# rule convert_bam_to_sam: 
+#     input:expand('aligned/{sample_name}/{sample_name}_sorted.bam', sample_name = sample_tab.sample_name)
+#     output: 'aligned/{sample_name}/{sample_name}_sorted.sam'
+#     conda: "envs/talon.yaml"
+#     shell:
+#         """
+#         samtools view -h -o {output} {input}
+#         """
 
 rule label_reads:
-    input:expand('aligned/{sample_name}/{sample_name}_sorted.sam', sample_name = sample_tab.sample_name)
+    input: lambda wildcards: f"aligned/{wildcards.sample_name}/{wildcards.sample_name}_sorted.bam"
     output: 'labeled/{sample_name}/{sample_name}_labeled.sam'
     params:
         genome = config["organism_fasta"],
-        output_dir = "labeled/{sample_name}/{sample_name}"
+        output_dir = lambda wildcards: f"labeled/{wildcards.sample_name}/{wildcards.sample_name}"
     conda: "envs/talon.yaml"
     threads: workflow.cores * 0.75
     shell:
@@ -44,6 +44,7 @@ rule label_reads:
         mkdir -p {params.output_dir}
         talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o={params.output_dir}
         """    
+
 
 rule initialize_talon_database:
     input:
