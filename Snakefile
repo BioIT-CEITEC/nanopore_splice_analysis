@@ -45,7 +45,6 @@ rule label_reads:
         talon_label_reads --f={input} --t {threads} --g={params.genome} --deleteTmp  --o={params.output_dir}
         """    
 
-
 rule initialize_talon_database:
     input:
         ref_gtf = config["organism_gtf"]
