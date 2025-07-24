@@ -75,9 +75,7 @@ rule create_talon_config:
         with open(output[0], "w") as f:
             for file in input.sam_files:
                 base = os.path.basename(file).removesuffix(".sam")
-                base = base[:-8]  # remove "_labeled"
-                sample = base[:-6]
-
+                sample = os.path.basename(file).replace("_labeled.sam", "")
                 f.write(f"{base},{sample},ONT,{file}\n")
 
 rule talon_annotate:

@@ -13,7 +13,9 @@
       "splice_analysis/{sample}/{sample}_talon.gtf",
       "splice_analysis/{sample}/{sample}_talon_read_annot.tsv",
       "splice_analysis/{sample}/{sample}_QC.log",
-      "splice_analysis/{sample}/{sample}_talon_abundance.tsv"
+      "splice_analysis/{sample}/{sample}_talon_abundance.tsv",
+      "splice_analysis/{sample}/talon.db",
+      "splice_analysis/config.csv"
     ],
     "run_parameters": {
       "cpu": 30,
