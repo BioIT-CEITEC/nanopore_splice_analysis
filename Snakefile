@@ -101,7 +101,8 @@ rule talon_annotate:
 
 rule talon_filter_transcripts:
     input:
-        db="splice_analysis/{sample_name}/talon.db"
+        db="splice_analysis/{sample_name}/talon.db",
+        tsv="splice_analysis/{sample_name}/{sample_name}_talon_read_annot.tsv"
     output:
         filtered="splice_analysis/{sample_name}/{sample_name}_filtered_read_annot.tsv"
     params:
@@ -117,7 +118,8 @@ rule talon_filter_transcripts:
 
 rule talon_create_gtf:
     input:
-        db="splice_analysis/{sample_name}/talon.db"
+        db="splice_analysis/{sample_name}/talon.db",
+        tsv="splice_analysis/{sample_name}/{sample_name}_talon_read_annot.tsv"
     output:
         "splice_analysis/{sample_name}/{sample_name}_talon.gtf"
     params:
@@ -132,7 +134,8 @@ rule talon_create_gtf:
 
 rule talon_abundance:
     input:
-        db="splice_analysis/{sample_name}/talon.db"
+        db="splice_analysis/{sample_name}/talon.db",
+        tsv="splice_analysis/{sample_name}/{sample_name}_talon_read_annot.tsv"
     output:
         "splice_analysis/{sample_name}/{sample_name}_talon_abundance.tsv"
     params:
