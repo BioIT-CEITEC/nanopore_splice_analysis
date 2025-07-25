@@ -32,7 +32,7 @@ rule all:
 #         """
 
 rule label_reads:
-    input: lambda wildcards: f"aligned/{wildcards.sample_name}/{wildcards.sample_name}_sorted.bam"
+    input: expand("aligned/{sample_name}/{sample_name}_sorted.bam", sample_name = sample_tab.sample_name)
     output: 'labeled/{sample_name}/{sample_name}_labeled.sam'
     params:
         genome = config["organism_fasta"],
