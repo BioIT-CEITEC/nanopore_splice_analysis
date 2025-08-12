@@ -36,7 +36,7 @@ rule label_reads:
     output: 'labeled/{sample_name}/{sample_name}_labeled.sam'
     params:
         genome = config["organism_fasta"],
-        output_dir = lambda wildcards: f"labeled/{wildcards.sample_name}"
+        output_dir = lambda wildcards: f"labeled/{wildcards.sample_name}/{wildcards.sample_name}"
     conda: "envs/talon.yaml"
     threads: workflow.cores * 0.75
     shell:
